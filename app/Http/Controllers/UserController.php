@@ -116,4 +116,10 @@ class UserController extends Controller
                 return redirect('/dashboard');
             }
     }
+
+    public function bookedrooms()
+    {
+        $booked_rooms = RoomsAvail::where('booked_by',Auth::user()['user_id'])->get()->toArray();
+        return view('booked-rooms')->with('booked_rooms',$booked_rooms);
+    }
 }

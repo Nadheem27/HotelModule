@@ -44,6 +44,7 @@ class HotelController extends Controller
     public function logout()
     {
         Auth::guard('hotel')->logout();
+        Session::flush();
         return redirect('/hotel-login');
     }
 

@@ -32,6 +32,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/logout', 'UserController@logout');
     Route::post('/get-room', 'UserController@room');
     Route::post('/book-room', 'UserController@book');
+    Route::get('/booked-rooms', 'UserController@bookedrooms');
 });
 
 Route::group(['middleware' => 'hotel'], function() {
