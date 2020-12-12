@@ -9,6 +9,6 @@ class RoomsAvail extends Model
     protected $table = 'rooms_available';
     protected $primaryKey = 'booking_id';
     public $timestamps = false;
-    protected $fillable = ['room_number','avail_date',
-    'book_status','booked_by','booked_time','created_at'];
+    protected $fillable = ['room_number','check_in',
+    'book_status','check_out','created_at'];
 }

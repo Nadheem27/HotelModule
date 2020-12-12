@@ -37,16 +37,37 @@
                                         <select class="form-control" name="room_number" required>
                                             <option selected disabled value="">Please Select Room Number</option>
                                             @foreach($room_drop as $data)
-                                            <option value="{{ $data['room_number'] }}">{{ $data['room_number'] }}</option>
+                                            <option value="{{ $data['room_number'] }}" {{ $data['room_number'] === old('room_number') ? 'selected' : '' }}>{{ $data['room_number'] }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                 </div>
                                 <div class="form-group row mb-4">
-                                    <label class="col-sm-4 mt-2">Select Date</label>
+                                    <label class="col-sm-4 mt-2">Check In Date</label>
                                     <div class="col-sm-8">
                                         <input type="date" class="form-control" id="datepicker"
-                                            name="avail_date" required min=""/> 
+                                            name="check_in" required min="" value="{{ old('check_in') }}" />
+                                            <div>
+                                                @if ($errors->any())
+                                                    @foreach ($errors->get('check_in') as $error)
+                                                        <div class="text-danger" style="font-size: 1em;">{{ $error }}</div>
+                                                    @endforeach
+                                                @endif
+                                            </div>
+                                    </div>
+                                </div>
+                                <div class="form-group row mb-4">
+                                    <label class="col-sm-4 mt-2">Check Out Date</label>
+                                    <div class="col-sm-8">
+                                        <input type="date" class="form-control" id="datepicker1"
+                                            name="check_out" required min="" value="{{ old('check_out') }}"/>
+                                            <div>
+                                                @if ($errors->any())
+                                                    @foreach ($errors->get('check_out') as $error)
+                                                        <div class="text-danger" style="font-size: 1em;">{{ $error }}</div>
+                                                    @endforeach
+                                                @endif
+                                            </div> 
                                             <div class="text-danger" style="font-size: 1em;">{{Session::get('date_error')}}</div>
                                     </div>
                                 </div>
@@ -75,9 +96,8 @@
                         <tr>
                             <th>Booking ID</th>
                             <th>Room Number</th>
-                            <th>Availability Date</th>
-                            <th>Status</th>
-                            <th>Booked By</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
                         </tr>
                     </thead>
                     <tbody id="table-data">
@@ -85,14 +105,8 @@
                         <tr>
                             <td>{{ $data['booking_id'] }}</td>
                             <td>{{ $data['room_number'] }}</td>
-                            <td>{{ date('d-M-Y',strtotime($data['avail_date'])) }}</td>
-                            @if($data['book_status'] == 0)
-                            <td>NOT BOOKED</td>
-                            <td>NOT BOOKED</td>
-                            @else
-                            <td>BOOKED</td>
-                            <td>{{ $user::getusername($data['booked_by']) }}</td>
-                            @endif
+                            <td>{{ date('d-M-Y',strtotime($data['check_in'])) }}</td>
+                            <td>{{ date('d-M-Y',strtotime($data['check_out'])) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -113,6 +127,7 @@
         $(document).ready( function(){
             var date = "<?php echo date('Y-m-d', strtotime(today()->format('Y-m-d') .' +1 day'))?>";
             $('#datepicker').attr('min',date);
+            $('#datepicker1').attr('min',date);
         })
     </script>
 

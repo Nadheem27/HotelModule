@@ -9,6 +9,7 @@ use Auth;
 use Session;
 use App\User;
 use App\RoomsAvail;
+use App\Booking;
 
 class UserController extends Controller
 {
@@ -91,23 +92,41 @@ class UserController extends Controller
 
     public function room(Request $request)
     {
-        $room = RoomsAvail::where('avail_date',$request['date'])->where('book_status',0)->pluck('room_number');
-        if(!empty($room->first()))
-        {
-            return ['status' => 'success', 'data' => $room];
-        }else{
-            return ['status' => 'error', 'data' => 'No Rooms available on selected date'];
+        $request = ['check_in' => '2020-12-17','check_out' => '2020-12-20'];
+        $avail_room = RoomsAvail::where('check_in','<=',$request['check_in'])->where('check_out','>=',$request['check_out'])
+                    ->where('book_status',0)->select('room_number')->get()->toArray();
+        $book_room = RoomsAvail::where('check_in','<=',$request['check_in'])->where('check_out','>=',$request['check_out'])
+                    ->where('book_status',1)->get()->toArray();
+        dd($avail_room);
+        for($i=0;$i<count($book_room);$i++){
+            $booked[] = Booking::where('booking_id',$book_room[$i]['booking_id'])->get()->toArray();            
         }
+        for($j=0;$j<count($booked);$j++){
+            for($k=0;$k<count($booked[$j]);$k++){
+                $first = ($booked[$j][$k]['check_in'] >= $request['check_in']) && ($booked[$j][$k]['check_in'] <= $request['check_out']);
+                $second = ($booked[$j][$k]['check_out'] >= $request['check_in']) && ($booked[$j][$k]['check_out'] <= $request['check_out']);
+                if(($first == false) && ($second == false)){
+                    $avail_room[] = $booked[$j][$k]['room_number']; 
+                }
+            }         
+        }
+        dd($avail_room);
     }
 
     public function book(Request $request)
     {
         try{
-            $book = RoomsAvail::where('avail_date',$request['avail_date'])->where('room_number',$request['room_number'])->first();
+            $book = RoomsAvail::where('check_in','<=',$request['check_in'])->where('check_out','>=',$request['check_out'])
+                                ->where('room_number',$request['room_number'])->first();
             $book->book_status = 1;
-            $book->booked_by = Auth::user()['user_id'];
-            $book->booked_time = now();
             $book->save();
+            Booking::create([
+                'booking_id' => $book->booking_id,
+                'room_number' => $book->room_number,
+                'check_in' => $request['check_in'],
+                'check_out' => $request['check_out'],
+                'created_at' => now()
+            ]);
             $data = ['status' => 'SUCCESS', 'msg' => 'Room Booked Successfully !!'];
         }catch (Exception $e){
             $data = ['status' => 'ERROR', 'msg' => $e->getMessage()];

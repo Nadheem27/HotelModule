@@ -105,7 +105,7 @@ class HotelController extends Controller
     public function availablity()
     {
         $room_drop =  Rooms::where('record_status',1)->select('room_number')->get()->toArray();
-        $book_data = RoomsAvail::where('avail_date','>',$this->date())->get()->toArray();
+        $book_data = RoomsAvail::where('check_out','>',$this->date())->get()->toArray();
         return view('room-availability')->with('room_drop',$room_drop)->with('book_data',$book_data);
     }
 
@@ -113,17 +113,21 @@ class HotelController extends Controller
     {
         $validator = $request->validate([
             'room_number' => 'required',
-            'avail_date' => 'required'
+            'check_in' => 'required | date | after:now',
+            'check_out' => 'required| date | after:check_in',
         ]);
-        if($request['avail_date'] < $this->date()){
-            Session::flash('date_error','Please Select Future dates');
-            return redirect()->back();
-        }
-        $rd = RoomsAvail::where('room_number',$request['room_number'])->where('avail_date',$request['avail_date'])->first();
+        $rd = RoomsAvail::where('room_number',$request['room_number'])->
+                        where(function ($query) use ($request) {
+                                $query->where('check_in', '<=', $request['check_in'])
+                                    ->orWhere('check_out', '>=', $request['check_in']);
+                        })->where(function ($query) use ($request) {
+                            $query->where('check_in', '<=', $request['check_out'])
+                                ->orWhere('check_out', '>=', $request['check_out']);
+                        })->first();
         if(!empty($rd)){
-            $data = ['status' => 'Duplicate Record', 'msg' => 'Record Already Registered'];
+            $data = ['status' => 'ERROR', 'msg' => 'Check In date or Check Out has been Already Registered'];
             Session::put('msg',$data);
-            return redirect()->back();
+            return redirect()->back()->withInput($request->all());
         }else {
             $this->insert($request);
             return redirect('/availablity-check');
@@ -135,7 +139,8 @@ class HotelController extends Controller
         try{
             RoomsAvail::create([
                 'room_number' => $request['room_number'],
-                'avail_date' => $request['avail_date'],
+                'check_in' => $request['check_in'],
+                'check_out' => $request['check_out'],
                 'book_status' => 0,
                 'created_at' => now()
             ]);

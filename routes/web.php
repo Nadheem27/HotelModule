@@ -30,7 +30,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/', 'UserController@index');
     Route::get('/dashboard', 'UserController@index');
     Route::get('/logout', 'UserController@logout');
-    Route::post('/get-room', 'UserController@room');
+    Route::get('/get-room', 'UserController@room');
     Route::post('/book-room', 'UserController@book');
     Route::get('/booked-rooms', 'UserController@bookedrooms');
 });

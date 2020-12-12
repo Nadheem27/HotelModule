@@ -16,10 +16,9 @@ class CreateRoomsAvailableTable extends Migration
         Schema::create('rooms_available', function (Blueprint $table) {
             $table->increments('booking_id');
             $table->text('room_number');
-            $table->date('avail_date');
+            $table->date('check_in');
+            $table->date('check_out');
             $table->text('book_status');
-            $table->text('booked_by')->nullable();
-            $table->timestamp('booked_time')->nullable();
             $table->timestamp('created_at')->nullable();
         });
     }
