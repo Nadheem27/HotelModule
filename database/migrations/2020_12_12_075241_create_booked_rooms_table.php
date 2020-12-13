@@ -17,8 +17,7 @@ class CreateBookedRoomsTable extends Migration
             $table->increments('book_room_id');
             $table->text('booking_id');            
             $table->text('room_number');
-            $table->date('check_in');
-            $table->date('check_out');
+            $table->text('booked_dates');
             $table->timestamp('created_at')->nullable();
         });
     }

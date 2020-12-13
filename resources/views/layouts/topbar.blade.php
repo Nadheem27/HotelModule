@@ -10,7 +10,6 @@
             <!-- Left Side Of Navbar -->
             <ul class="navbar-nav mr-auto">
                 <a class="mr-5" href="/dashboard">Book a Room</a>
-                <a class="ml-5" href="/booked-rooms">Booked Rooms</a>
             </ul>
 
             <!-- Right Side Of Navbar -->

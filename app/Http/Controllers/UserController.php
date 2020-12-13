@@ -10,6 +10,7 @@ use Session;
 use App\User;
 use App\RoomsAvail;
 use App\Booking;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -92,29 +93,59 @@ class UserController extends Controller
 
     public function room(Request $request)
     {
-        $request = ['check_in' => '2020-12-17','check_out' => '2020-12-20'];
-        $avail_room = RoomsAvail::where('check_in','<=',$request['check_in'])->where('check_out','>=',$request['check_out'])
-                    ->where('book_status',0)->select('room_number')->get()->toArray();
-        $book_room = RoomsAvail::where('check_in','<=',$request['check_in'])->where('check_out','>=',$request['check_out'])
-                    ->where('book_status',1)->get()->toArray();
-        dd($avail_room);
-        for($i=0;$i<count($book_room);$i++){
-            $booked[] = Booking::where('booking_id',$book_room[$i]['booking_id'])->get()->toArray();            
+        $a = $request['check_in'];
+        $b = $request['check_out'];
+        $from = Carbon::parse($a);
+        $to = Carbon::parse($b);
+        $dates = [];
+        for($d = $from; $d->lte($to); $d->addDay()) {
+            $dates[] = $d->format('Y-m-d');
         }
-        for($j=0;$j<count($booked);$j++){
-            for($k=0;$k<count($booked[$j]);$k++){
-                $first = ($booked[$j][$k]['check_in'] >= $request['check_in']) && ($booked[$j][$k]['check_in'] <= $request['check_out']);
-                $second = ($booked[$j][$k]['check_out'] >= $request['check_in']) && ($booked[$j][$k]['check_out'] <= $request['check_out']);
-                if(($first == false) && ($second == false)){
-                    $avail_room[] = $booked[$j][$k]['room_number']; 
-                }
-            }         
+        $a1 = RoomsAvail::whereDate('check_in','<=',$a)->whereDate('check_out','>=',$b)
+            ->where('book_status',0)->first();
+        $b1 = RoomsAvail::whereDate('check_in','<=',$a)->whereDate('check_out','>=',$b)
+            ->where('book_status',1)->first();
+        if(($a1 == '') && ($b1 == '')){
+            return ['status' => 'error', 'data' => 'No Rooms Available on Selected Dates'];
+        }       
+        $avail_room = RoomsAvail::whereDate('check_in','<=',$a)->whereDate('check_out','>=',$b)
+                                ->where('book_status',0)->pluck('room_number')->toArray();
+        if($b1 != ''){
+            $book_room = RoomsAvail::whereDate('check_in','<=',$a)->whereDate('check_out','>=',$b)
+                                ->where('book_status',1)->get()->toArray();
+            for($i=0;$i<count($book_room);$i++){
+                $booked[] = Booking::where('booking_id',$book_room[$i]['booking_id'])->get()->toArray();            
+            }
+            for($j=0;$j<count($booked);$j++){
+                for($k=0;$k<count($booked[$j]);$k++){
+                    $date = explode('%',$booked[$j][$k]['booked_dates']);
+                    if (array_intersect($date, $dates)) {
+                        break;    
+                    }else {
+                        if($k == count($booked[$j])-1){
+                            $avail_room[] = $booked[$j][$k]['room_number'];
+                        }else{
+                            continue;
+                        }
+                    }
+                }                       
+            }
         }
-        dd($avail_room);
+        if(!empty($avail_room)){
+            return ['status' => 'success', 'data' => $avail_room];
+        }else {
+            return ['status' => 'error', 'data' => 'No Rooms Available on Selected Dates'];
+        }
     }
 
     public function book(Request $request)
     {
+        $from = Carbon::parse($request['check_in']);
+        $to = Carbon::parse($request['check_out']);
+        $dates = '';
+        for($d = $from; $d->lte($to); $d->addDay()) {
+            $dates = $dates.'%'.$d->format('Y-m-d');
+        }
         try{
             $book = RoomsAvail::where('check_in','<=',$request['check_in'])->where('check_out','>=',$request['check_out'])
                                 ->where('room_number',$request['room_number'])->first();
@@ -123,8 +154,7 @@ class UserController extends Controller
             Booking::create([
                 'booking_id' => $book->booking_id,
                 'room_number' => $book->room_number,
-                'check_in' => $request['check_in'],
-                'check_out' => $request['check_out'],
+                'booked_dates' => $dates,
                 'created_at' => now()
             ]);
             $data = ['status' => 'SUCCESS', 'msg' => 'Room Booked Successfully !!'];
@@ -135,10 +165,5 @@ class UserController extends Controller
                 return redirect('/dashboard');
             }
     }
-
-    public function bookedrooms()
-    {
-        $booked_rooms = RoomsAvail::where('booked_by',Auth::user()['user_id'])->get()->toArray();
-        return view('booked-rooms')->with('booked_rooms',$booked_rooms);
-    }
+    
 }
