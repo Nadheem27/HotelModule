@@ -18,6 +18,7 @@ class CreateRoomsAvailableTable extends Migration
             $table->text('room_number');
             $table->date('check_in');
             $table->date('check_out');
+            $table->text('available_dates');
             $table->text('book_status');
             $table->timestamp('created_at')->nullable();
         });

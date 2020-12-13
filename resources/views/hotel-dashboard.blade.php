@@ -96,7 +96,6 @@
                             <th>Room Number</th>
                             <th>Floor Number</th>
                             <th>No of Beds</th>
-                            <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody id="table-data">
@@ -105,9 +104,7 @@
                             <td>{{ $data['room_id'] }}</td>
                             <td>{{ $data['room_number'] }}</td>
                             <td>{{ $data['floor'] }}</td>
-                            <td>{{ $data['beds'] }}</td>
-                            <td class="text-danger text-center" value="{{ $data['room_id'] }}"><a class="delete" 
-                                style="color: #e61111;">DELETE</a></td>
+                            <td>{{ $data['beds'] }}</td>                            
                         </tr>
                         @endforeach
                     </tbody>
@@ -124,23 +121,5 @@
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function(){
-        $('#table-data').on('click','.delete',function(){
-            var id = $(this).parent().attr('value');
-            $.ajax({
-            url:"delete-room",
-            method:"POST",
-            cache:false,
-            data: { room:id , _token: '{{csrf_token()}}' },
-            success:function(data)
-            {   
-                if(data){
-                    top.location.href="/hotel-dashboard";
-                }   
-            }
-            });
-        });
-    });
-    </script>
+    
 

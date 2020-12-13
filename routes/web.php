@@ -38,7 +38,6 @@ Route::group(['middleware' => 'hotel'], function() {
     Route::get('/hotel-dashboard', 'HotelController@table');
     Route::get('/hotel-logout', 'HotelController@logout');
     Route::post('/new-room', 'HotelController@newroom');
-    Route::post('/delete-room', 'HotelController@delete');
     Route::get('/availablity-check', 'HotelController@availablity');
     Route::post('/room-availability', 'HotelController@newavail');
 });

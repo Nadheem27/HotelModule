@@ -12,6 +12,7 @@ use App\User;
 use App\HotelLogin;
 use App\Rooms;
 use App\RoomsAvail;
+use Carbon\Carbon;
 
 class HotelController extends Controller
 {
@@ -116,18 +117,30 @@ class HotelController extends Controller
             'check_in' => 'required | date | after:now',
             'check_out' => 'required| date | after:check_in',
         ]);
-        $rd = RoomsAvail::where('room_number',$request['room_number'])->
-                        where(function ($query) use ($request) {
-                                $query->where('check_in', '<=', $request['check_in'])
-                                    ->orWhere('check_out', '>=', $request['check_in']);
-                        })->where(function ($query) use ($request) {
-                            $query->where('check_in', '<=', $request['check_out'])
-                                ->orWhere('check_out', '>=', $request['check_out']);
-                        })->first();
-        if(!empty($rd)){
-            $data = ['status' => 'ERROR', 'msg' => 'Check In date or Check Out has been Already Registered'];
-            Session::put('msg',$data);
-            return redirect()->back()->withInput($request->all());
+        $check = RoomsAvail::where('room_number',$request['room_number'])->first();        
+        if(!empty($check)){
+            $from = Carbon::parse($request['check_in']);
+            $to = Carbon::parse($request['check_out']);
+            $dates = [];
+            for($d = $from; $d->lte($to); $d->addDay()) {
+                $dates[] = $d->format('Y-m-d');
+            }
+            $q = RoomsAvail::where('room_number',$request['room_number'])->get()->toArray();
+            for($i=0;$i<count($q);$i++){
+                $avail_date = explode('%',$q[$i]['available_dates']);
+                if (array_intersect($avail_date, $dates)) {
+                    $data = ['status' => 'ERROR', 'msg' => 'Check In date or Check Out has been Already Registered'];
+                    Session::put('msg',$data);
+                    return redirect()->back()->withInput($request->all());   
+                }else {
+                    if($i == count($q)-1){
+                        $this->insert($request);
+                        return redirect('/availablity-check');
+                    }else{
+                        continue;
+                    }
+                }
+            }            
         }else {
             $this->insert($request);
             return redirect('/availablity-check');
@@ -136,11 +149,18 @@ class HotelController extends Controller
 
     public function insert($request)
     {
+        $from = Carbon::parse($request['check_in']);
+        $to = Carbon::parse($request['check_out']);
+        $dates = '';
+        for($d = $from; $d->lte($to); $d->addDay()) {
+            $dates = $dates.'%'.$d->format('Y-m-d');
+        }
         try{
             RoomsAvail::create([
                 'room_number' => $request['room_number'],
                 'check_in' => $request['check_in'],
                 'check_out' => $request['check_out'],
+                'available_dates' => $dates,
                 'book_status' => 0,
                 'created_at' => now()
             ]);
